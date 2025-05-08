@@ -1,17 +1,41 @@
 import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-foo',
-  imports: [],
-  templateUrl: './foo.component.html',
-  styleUrl: './foo.component.css'
+ selector: 'app-foo',
+ templateUrl: './foo.component.html',
+ styleUrls: ['./foo.component.css'],
+ imports:[CommonModule]
 })
-export class FooComponent implements OnInit {
-  ngOnInit(): void {
-    throw new Error('Method not implemented.');
-  }
-  data!: Object;
-  loading!: boolean;
-  o! :Observable<Object>;
+export class FooComponent {
+   data!: Object; //Il ‘!’ serve a creare variabili non inizializzate
+   loading: boolean=false;
+   o! :Observable<Object>;
+   constructor(public http: HttpClient) {}
+   makeRequest(): void {
+     console.log("here");
+     this.loading = true;
+     this.o = this.http.get('https://jsonplaceholder.typicode.com/posts/1');
+     this.o.subscribe(this.getData);
+   }
+   getData = (d : Object) =>
+   {
+     this.data = new Object(d);
+     this.loading = false;
+   }
+   //Nota bene, questo è un metodo alternativo e compatto per fare la stessa cosa di 
+   //makeRequest senza dichiarare la variabile Observable e creando l’arrow function   
+   //direttamente dentro il metodo subscribe, lo trovate su internet e sicuramente l’AI ve lo 
+   //consiglia, ma NON USATELO
+   makeCompactRequest(): void {
+     this.loading = true;
+     this.http
+       .get('https://jsonplaceholder.typicode.com/posts/1')
+       .subscribe((newData: Object) => {
+       this.data = newData;
+       this.loading = false;
+       });
+      }
 }
