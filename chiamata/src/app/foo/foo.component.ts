@@ -1,41 +1,70 @@
-import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Component } from '@angular/core';
+import { Foo } from '../model/foo.model';
 import { Observable } from 'rxjs';
-import { CommonModule } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 
 @Component({
- selector: 'app-foo',
- templateUrl: './foo.component.html',
- styleUrls: ['./foo.component.css'],
- imports:[CommonModule]
+  selector: 'app-foo',
+  imports: [JsonPipe],
+  templateUrl: './foo.component.html',
+  styleUrl: './foo.component.css'
 })
 export class FooComponent {
-   data!: Object; //Il ‘!’ serve a creare variabili non inizializzate
-   loading: boolean=false;
-   o! :Observable<Object>;
-   constructor(public http: HttpClient) {}
-   makeRequest(): void {
-     console.log("here");
-     this.loading = true;
-     this.o = this.http.get('https://jsonplaceholder.typicode.com/posts/1');
-     this.o.subscribe(this.getData);
-   }
-   getData = (d : Object) =>
-   {
-     this.data = new Object(d);
-     this.loading = false;
-   }
-   //Nota bene, questo è un metodo alternativo e compatto per fare la stessa cosa di 
-   //makeRequest senza dichiarare la variabile Observable e creando l’arrow function   
-   //direttamente dentro il metodo subscribe, lo trovate su internet e sicuramente l’AI ve lo 
-   //consiglia, ma NON USATELO
-   makeCompactRequest(): void {
-     this.loading = true;
-     this.http
-       .get('https://jsonplaceholder.typicode.com/posts/1')
-       .subscribe((newData: Object) => {
-       this.data = newData;
-       this.loading = false;
-       });
-      }
+
+  fooData! : Foo[];
+  data!: Object;
+  loading: boolean = false;
+  o!: Observable<Object>;
+  oPost! : Observable<Object>;
+  oFoo! : Observable<Foo[]>;
+
+  constructor(public http: HttpClient) { }
+
+  RESOURCE_URL = 'https://jsonplaceholder.typicode.com/posts/';
+  
+  //Alla pressione di un bottone facciamo una richiesta http
+  makeUntypedRequest(): void {
+    this.loading = true;
+    this.o = this.http.get(this.RESOURCE_URL + '/1')
+    this.o.subscribe(this.getSinglePostData);
+  }
+ 
+  //Funzione che viene richiamata quando arrivano i dati dal server
+  getSinglePostData = (data : Object) => {
+    this.data = data;
+    this.loading = false;
+  }
+
+  //L'operazione di post necessita un parametro in più con i dati da inviare
+  //Viene creata una stringa (JSON.strigify) a partire da un oggetto Typescript
+  makePost(): void {
+    // Definisco i dati da spedire
+    let dataToSend = JSON.stringify({ 
+      body: 'bar',
+      title: 'foo',
+      userId: 1
+    });
+
+    this.loading = true;
+
+    //Faccio la richiesta post
+    this.oPost = this.http.post('https://jsonplaceholder.typicode.com/posts', dataToSend)
+    this.oPost.subscribe(this.getPostResponse);
+  }
+
+  //Ricevo i dati in risposta dalla post (Nota, non sono ancora tipizzati)
+  getPostResponse = (data : Object) => {
+    this.data = data;
+    this.loading = false;
+  }
+
+
+  makeTypedRequest() : void
+  {
+    //oFoo : Observable<Foo[]>; Observable di tipo Foo[] è stao dichiarato tra gli attributi della classe 
+    this.oFoo = this.http.get<Foo[]>('https://jsonplaceholder.typicode.com/posts');
+    this.oFoo.subscribe(data => {this.fooData = data;});
+  }
+
 }
